@@ -12,9 +12,9 @@ const tokenForUser = (u) =>
 
 router.post('/register', async (req, res) => {
   try {
-    let { name, userTypeId, email, phone, dob, gender, password } = req.body;
+    let { name, userTypeId, email, phone, gender, password } = req.body;
 
-    if (!name || !userTypeId || !email || !gender || !phone || !dob || !password) {
+    if (!name || !userTypeId || !email || !gender || !phone || !password) {
       res.json({
         success: false,
         message: 'all fields are required!',
@@ -41,7 +41,6 @@ router.post('/register', async (req, res) => {
       userTypeId,
       email,
       phone,
-      dob,
       gender,
       password,
     });
@@ -52,6 +51,36 @@ router.post('/register', async (req, res) => {
       success: true,
       user: created,
       token,
+    });
+  } catch (error) {
+    console.trace(error);
+    res.json({
+      success: false,
+      error,
+    });
+  }
+});
+
+router.post('/update', async (req, res) => {
+  try {
+    let { name, phone, gender, password, id } = req.body;
+
+    let _user = await users.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (name) _user.name = name;
+    if (phone) _user.phone = phone;
+    if (gender) _user.gender = gender;
+    if (password) _user.password = password;
+
+    await _user.save();
+
+    res.json({
+      success: true,
+      user: _user,
     });
   } catch (error) {
     console.trace(error);
@@ -98,6 +127,7 @@ router.post('/login', async (req, res) => {
     }
     alreadyExists = JSON.parse(JSON.stringify(alreadyExists));
 
+    const token = tokenForUser(alreadyExists);
     res.json({
       success: true,
       user: alreadyExists,
@@ -186,7 +216,7 @@ router.post('/topics', async (req, res) => {
   }
 });
 
-router.post('/groupsForUser/:userId', async (req, res) => {
+router.post('/usersWithDissertation/:userId', async (req, res) => {
   try {
     let { userId } = req.params;
 
@@ -206,8 +236,9 @@ router.post('/groupsForUser/:userId', async (req, res) => {
     let usersWithPreferencesInJoinWithCurrentUser = await userPreferences.findAll({
       where: {
         topicId: { [Op.in]: currentUserPreferences.map((s) => s.topicId) },
-        group: ['userId'],
+        userId: { [Op.notIn]: [currentUser.id] },
       },
+      group: ['userId'],
     });
 
     let usersWithPreferencesInJoin = [];
@@ -216,11 +247,12 @@ router.post('/groupsForUser/:userId', async (req, res) => {
         where: {
           id: eachUser.userId,
         },
+        attributes: ['id', 'name', 'email', 'phone', 'gender', 'userTypeId'],
       });
 
       userDetails = JSON.parse(JSON.stringify(userDetails));
 
-      if (userDetails.userTypeId === currentUser.userTypeId) continue;
+      if (userDetails.userTypeId == currentUser.userTypeId) continue;
 
       let userPreferences_ = await userPreferences.findAll({ where: { userId: userDetails.id } });
       userPreferences_ = JSON.parse(JSON.stringify(userPreferences_));
@@ -237,9 +269,11 @@ router.post('/groupsForUser/:userId', async (req, res) => {
     }
 
     res.json({
-      usersWithPreferencesInJoin,
+      success: true,
+      usersWithDissertation: usersWithPreferencesInJoin,
     });
   } catch (error) {
+    console.trace(error);
     res.json({
       success: false,
       error,
@@ -247,22 +281,26 @@ router.post('/groupsForUser/:userId', async (req, res) => {
   }
 });
 
-router.post('/preferences/:userId', async (req, res) => {
+router.post('/preferences/:userId/:preferenceId/:action', async (req, res) => {
   try {
-    let { preferences } = req.body;
-    let { userId } = req.params;
+    let { userId, preferenceId, action } = req.params;
 
-    await userPreferences.destory({ where: { userId } });
-
-    for (let eachTopic of preferences) {
-      await userPreferences.create({ topicId: eachTopic.id, userId });
+    if (action === 'delete') {
+      let up = await userPreferences.findOne({ where: { userId, topicId: preferenceId } });
+      if (up) up.destroy();
     }
+
+    if (action === 'add') await userPreferences.create({ topicId: preferenceId, userId });
+
+    let ups = await userPreferences.findAll({ where: { userId } });
+    ups = JSON.parse(JSON.stringify(ups));
 
     res.json({
       success: true,
-      preferences: await userPreferences.findAll({ where: { userId } }),
+      preferences: ups.map((a) => a.topicId),
     });
   } catch (error) {
+    console.trace(error);
     res.json({
       success: false,
       error,
@@ -273,9 +311,13 @@ router.post('/preferences/:userId', async (req, res) => {
 router.get('/preferences/:userId', async (req, res) => {
   try {
     let { userId } = req.params;
+
+    let ups = await userPreferences.findAll({ where: { userId } });
+    ups = JSON.parse(JSON.stringify(ups));
+
     res.json({
       success: true,
-      preferences: await userPreferences.findAll({ where: { userId } }),
+      preferences: ups.map((a) => a.topicId),
     });
   } catch (error) {
     res.json({
