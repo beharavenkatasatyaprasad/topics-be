@@ -35,12 +35,12 @@
     CREATE TABLE IF NOT EXISTS userPreferences(
         id int AUTO_INCREMENT,
         userId int,
-        preferenceId int,
+        topicId int,
         createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         FOREIGN KEY (userId) REFERENCES users (id),
-        FOREIGN KEY (preferenceId) REFERENCES topics (id)
+        FOREIGN KEY (topicId) REFERENCES topics (id)
     );
     
     COMMIT;

@@ -15,7 +15,7 @@ module.exports = function(sequelize, DataTypes) {
         key: 'id'
       }
     },
-    preferenceId: {
+    topicId: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
@@ -44,10 +44,10 @@ module.exports = function(sequelize, DataTypes) {
         ]
       },
       {
-        name: "preferenceId",
+        name: "topicId",
         using: "BTREE",
         fields: [
-          { name: "preferenceId" },
+          { name: "topicId" },
         ]
       },
     ]

@@ -12,9 +12,10 @@ app.get('/', (req, res) => {
   res.send({ message: 'No cookie for you' });
 });
 
+app.use('/api', require('./routes/index'));
+
 const port = process.env.PORT || 8000;
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
-  

@@ -12,8 +12,8 @@ function initModels(sequelize) {
   var userTypes = _userTypes(sequelize, DataTypes);
   var users = _users(sequelize, DataTypes);
 
-  userPreferences.belongsTo(topics, { as: "preference", foreignKey: "preferenceId"});
-  topics.hasMany(userPreferences, { as: "userpreferences", foreignKey: "preferenceId"});
+  userPreferences.belongsTo(topics, { as: "preference", foreignKey: "topicId"});
+  topics.hasMany(userPreferences, { as: "userpreferences", foreignKey: "topicId"});
   users.belongsTo(userTypes, { as: "userType", foreignKey: "userTypeId"});
   userTypes.hasMany(users, { as: "users", foreignKey: "userTypeId"});
   userPreferences.belongsTo(users, { as: "user", foreignKey: "userId"});
